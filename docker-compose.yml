@@ -1,0 +1,59 @@
+services:
+  web:
+    image: node:20-alpine
+    working_dir: /app
+    ports:
+      - "3005:3000"
+    environment:
+      NODE_ENV: development
+    volumes:
+      - ./front-end:/app
+      - ./front-end/node_modules:/app/node_modules
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - app
+    networks:
+      - tech-challenge-network
+  app:
+    image: node:23-alpine
+    container_name: tech-challenge-app
+    working_dir: /usr/src/app
+    volumes:
+      - ./back-end/Blog-FIAP:/usr/src/app
+      - ./back-end/Blog-FIAP/node_modules:/usr/src/app/node_modules
+    command: sh -c "npm install && npm run dev"
+    depends_on:
+      - mongo
+    networks:
+      - tech-challenge-network
+    ports:
+      - "3001:3000"
+    restart: unless-stopped
+    environment:
+      - MONGODB_URI=mongodb://tech-challenge-mongo:27017/tech_challenge
+
+  mongo:
+    image: mongo:7
+    container_name: tech-challenge-mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=tech_challenge
+      - MONGODB_URI=mongodb://tech-challenge-mongo:27017/tech_challenge
+    networks:
+      - tech-challenge-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  mongo_data:
+
+networks:
+  tech-challenge-network:
+    driver: bridge
