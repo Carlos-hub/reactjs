@@ -1,0 +1,3 @@
+[submodule "back-end/Blog-FIAP"]
+	path = back-end/Blog-FIAP
+	url = https://github.com/Carlos-hub/reactjs
