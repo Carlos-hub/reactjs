@@ -1,7 +1,9 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 type Post = {
+  id: string;
   _id: string;
   title: string;
   content: string;
@@ -9,7 +11,8 @@ type Post = {
   createdAt: string;
 };
 
-export default function page() {
+export default function Page() {
+  const router = useRouter();
   const [posts, setPosts] = useState<Post[]>([]);
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([]);
   const [search, setSearch] = useState("");
@@ -22,6 +25,12 @@ export default function page() {
       setError(null);
 
       try {
+        const authResponse = await fetch("/api/auth/me");
+        if (!authResponse.ok) {
+          router.push("/login");
+          return;
+        }
+
         // You may need to adjust endpoint
         const response = await fetch("/api/posts", {
           method: "GET",
@@ -31,7 +40,6 @@ export default function page() {
         }
 
         const data = await response.json();
-		console.log(data);
         setPosts(data.data || []);
         setFilteredPosts(data.data || []);
       } catch (err) {
@@ -42,7 +50,7 @@ export default function page() {
       }
     };
     fetchPosts();
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     if (search.trim() === "") {
