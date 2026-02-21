@@ -52,9 +52,9 @@ export default function page() {
       setFilteredPosts(
         posts.filter(
           (post) =>
-            post.title.toLowerCase().includes(lower) ||
-            post.content.toLowerCase().includes(lower) ||
-            post.author.toLowerCase().includes(lower)
+            post.title?.toLowerCase().includes(lower) ||
+            post.content?.toLowerCase().includes(lower) ||
+            post.author?.toLowerCase().includes(lower)
         )
       );
     }
@@ -98,9 +98,9 @@ export default function page() {
           </div>
         ) : (
           <ul className="flex flex-col gap-4">
-            {filteredPosts.map((post) => (
+            {filteredPosts.map((post, index) => (
               <li
-                key={post._id}
+                key={index}
                 className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
               >
                 <div className="flex flex-col gap-1">
