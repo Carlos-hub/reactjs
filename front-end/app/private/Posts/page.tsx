@@ -99,8 +99,9 @@ export default function page() {
         ) : (
           <ul className="flex flex-col gap-4">
             {filteredPosts.map((post, index) => (
+				<a href={`/private/Posts/create?id=${post?.id ?? post._id}`} key={post?.id ?? post._id}>
               <li
-                key={index}
+                
                 className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
               >
                 <div className="flex flex-col gap-1">
@@ -118,6 +119,7 @@ export default function page() {
                   </p>
                 </div>
               </li>
+			  </a>
             ))}
           </ul>
         )}
