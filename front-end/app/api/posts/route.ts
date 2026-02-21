@@ -23,7 +23,6 @@ export const GET = async <T>(
 			Authorization: `Bearer ${token}`,
 		},
 	});
-
   return NextResponse.json(await response.json());
 };
 
