@@ -76,7 +76,7 @@ export default function CreateOrEditPostPage() {
     setSuccessMsg(null);
 
     // Validação simples
-    if (!form.title.trim() || !form.content.trim() || !form.author.trim()) {
+    if (!form.title.trim() || !form.content.trim()) {
       setError("Preencha todos os campos.");
       setLoading(false);
       return;
@@ -90,20 +90,19 @@ export default function CreateOrEditPostPage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify(form),
+          body: JSON.stringify({ title: form.title, content: form.content }),
         });
         const data: ApiResponse = await res.json();
         if (!data.success) throw new Error(data.error?.message || "Falha ao atualizar postagem.");
         setSuccessMsg("Postagem atualizada com sucesso!");
       } else {
         // Criar nova postagem
-		console.log(form.title, form.content, form.author);
         const res = await fetch("/api/posts", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ title: form.title, content: form.content, author: form.author }),
+          body: JSON.stringify({ title: form.title, content: form.content }),
         });
         const data: ApiResponse = await res.json();
         if (!data.success) throw new Error(data.error?.message || "Falha ao criar postagem.");
@@ -123,7 +122,7 @@ export default function CreateOrEditPostPage() {
       setLoading(false);
     }
   };
-
+  console.log("CreateOrEditPostPage", editingId);
   return (
     <main className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
       <div className="w-full max-w-xl bg-white dark:bg-zinc-900 rounded-xl p-8 shadow-lg border border-zinc-200 dark:border-zinc-700">
@@ -152,18 +151,6 @@ export default function CreateOrEditPostPage() {
               rows={5}
               className="rounded-md border px-3 py-2 outline-none border-zinc-300 focus:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-50 dark:border-zinc-600"
               placeholder="Digite o conteúdo da postagem"
-              required
-            />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="font-medium">Autor</span>
-            <input
-              type="text"
-              name="author"
-              value={form.author}
-              onChange={handleChange}
-              className="rounded-md border px-3 py-2 outline-none border-zinc-300 focus:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-50 dark:border-zinc-600"
-              placeholder="Digite o nome do autor"
               required
             />
           </label>

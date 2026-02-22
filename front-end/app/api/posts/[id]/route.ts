@@ -4,7 +4,6 @@ import { getToken } from "../route";
 const API_BASE_URL = process.env.API_BASE_URL;
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
 	const { id } = await params;
-	console.log(id);
 	if (!id || !id.trim()) {
 		return NextResponse.json({ error: "ID is required" }, { status: 400 });
 	}
@@ -17,6 +16,5 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 		},
 	});
 	const result = await response.json();
-	console.log(result);
 	return NextResponse.json(result);
 }
