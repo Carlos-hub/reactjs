@@ -107,27 +107,24 @@ export default function Page() {
         ) : (
           <ul className="flex flex-col gap-4">
             {filteredPosts.map((post, index) => (
-				<a href={`/private/Posts/create?id=${post?.id ?? post._id}`} key={post?.id ?? post._id}>
-              <li
-                
+				<li
+                key={post?.id ?? post._id}
                 className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm transition hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
               >
+				<a href={`/private/Posts/create?id=${post?.id ?? post._id}`} key={post?.id ?? post._id}>
                 <div className="flex flex-col gap-1">
                   <h2 className="text-xl font-bold">{post.title}</h2>
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-xs text-zinc-500 dark:text-zinc-400">
                       Por {post.author}
                     </span>
-                    <span className="text-xs text-zinc-400 dark:text-zinc-500">
-                      {new Date(post.createdAt).toLocaleDateString("pt-BR")}
-                    </span>
                   </div>
                   <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-200">
                     {post.content}
                   </p>
                 </div>
+			    </a>
               </li>
-			  </a>
             ))}
           </ul>
         )}

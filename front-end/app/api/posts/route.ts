@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { ApiResponse } from "../../../lib/Interfaces/ApiResponse";
 import { getValidSessionHelper } from "../Helpers/GetValidSessionHelper";
-
 const API_BASE_URL = process.env.API_BASE_URL;
 
 type RequestOptions = {
@@ -13,8 +12,7 @@ export const getToken = async (): Promise<string> => {
 	return await getValidSessionHelper();
 };
 
-export const GET = async <T>(
-): Promise<NextResponse<T>> => {
+export async function GET(): Promise<NextResponse> {
 	const token = await getToken();
 	const response = await fetch(`${API_BASE_URL}/posts`, {
 		method: "GET",
@@ -23,8 +21,18 @@ export const GET = async <T>(
 			Authorization: `Bearer ${token}`,
 		},
 	});
-  return NextResponse.json(await response.json());
-};
+	const result = (await response.json()) as ApiResponse<unknown>;
+	if (
+		result.error?.message === "Unauthorized" ||
+		result.error?.message === "Forbidden"
+	) {
+		return NextResponse.json(
+			{ success: false, error: { message: "Unauthorized" } },
+			{ status: 401 }
+		);
+	}
+  return NextResponse.json(result);
+}
 
 export const GetPostById = async <T>(id: string): Promise<T> => {
 	const token = await getToken();
@@ -55,16 +63,12 @@ export const SearchPosts = async <T>(term: string): Promise<ApiResponse<T>> => {
 		},
 	});
 
-  return {
-    success: (await response.json()) as ApiResponse<T>["success"],
-    message: (await response.json()) as ApiResponse<T>["message"],
-    data: (await response.json()) as ApiResponse<T>["data"],
-    error: (await response.json()) as ApiResponse<T>["error"],
-  };
+  const payload = (await response.json()) as ApiResponse<T>;
+  return payload;
 };
 
 
-export const POST = async <T>(request: Request): Promise<NextResponse<T>> => {
+export async function POST(request: Request): Promise<NextResponse> {
 	const token = await getToken();
 	const RequestBody = await request.json();
 	console.log(RequestBody?.title, RequestBody?.content, RequestBody?.author);
@@ -77,4 +81,4 @@ export const POST = async <T>(request: Request): Promise<NextResponse<T>> => {
 		body: JSON.stringify(RequestBody),
 	});
 	return NextResponse.json(await response.json());
-};
+}
