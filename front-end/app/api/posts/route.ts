@@ -1,84 +1,56 @@
 import { NextResponse } from "next/server";
-import { ApiResponse } from "../../../lib/Interfaces/ApiResponse";
-import { getValidSessionHelper } from "../Helpers/GetValidSessionHelper";
-const API_BASE_URL = process.env.API_BASE_URL;
-
-type RequestOptions = {
-  method?: "GET" | "POST";
-  body?: Record<string, unknown>;
-};
-
-export const getToken = async (): Promise<string> => {
-	return await getValidSessionHelper();
-};
+import { requestBackend } from "@/lib/server/backendClient";
+import { getSessionUserFromCookie, getTokenFromCookie } from "@/lib/server/session";
 
 export async function GET(): Promise<NextResponse> {
-	const token = await getToken();
-	const response = await fetch(`${API_BASE_URL}/posts`, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${token}`,
-		},
-	});
-	const result = (await response.json()) as ApiResponse<unknown>;
-	if (
-		result.error?.message === "Unauthorized" ||
-		result.error?.message === "Forbidden"
-	) {
-		return NextResponse.json(
-			{ success: false, error: { message: "Unauthorized" } },
-			{ status: 401 }
-		);
-	}
-  return NextResponse.json(result);
-}
-
-export const GetPostById = async <T>(id: string): Promise<T> => {
-	const token = await getToken();
-  const response = await fetch(`${API_BASE_URL}/posts/${id}`, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-		},
-	});
-
-  const payload: ApiResponse<T> = await response.json();
-
-  if (!response.ok || !payload?.success) {
-    throw new Error(payload?.error?.message || "Erro ao consumir a API de posts.");
+  const token = await getTokenFromCookie();
+  if (!token) {
+    return NextResponse.json(
+      { success: false, error: { message: "Unauthorized" } },
+      { status: 401 }
+    );
   }
 
-  return payload.data as T;
-};
-
-export const SearchPosts = async <T>(term: string): Promise<ApiResponse<T>> => {
-	const token = await getToken();
-	const response = await fetch(`${API_BASE_URL}/posts/search?q=${encodeURIComponent(term)}`, {
-		method: "GET",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${token}`,
-		},
-	});
-
-  const payload = (await response.json()) as ApiResponse<T>;
-  return payload;
-};
-
+  const { status, payload } = await requestBackend<unknown[]>("/posts", {
+    token,
+  });
+  return NextResponse.json(payload, { status });
+}
 
 export async function POST(request: Request): Promise<NextResponse> {
-	const token = await getToken();
-	const RequestBody = await request.json();
-	console.log(RequestBody?.title, RequestBody?.content, RequestBody?.author);
-	const response = await fetch(`${API_BASE_URL}/posts`, {
-		method: "POST",
-		headers: {
-			"Content-Type": "application/json",
-			Authorization: `Bearer ${token}`,
-		},
-		body: JSON.stringify(RequestBody),
-	});
-	return NextResponse.json(await response.json());
+  const user = await getSessionUserFromCookie();
+  const token = await getTokenFromCookie();
+
+  if (!token || !user) {
+    return NextResponse.json(
+      { success: false, error: { message: "Unauthorized" } },
+      { status: 401 }
+    );
+  }
+  if (user.role !== "professor") {
+    return NextResponse.json(
+      { success: false, error: { message: "Forbidden" } },
+      { status: 403 }
+    );
+  }
+
+  const body = (await request.json()) as { title?: string; content?: string };
+  const payloadBody = {
+    title: body.title?.trim(),
+    content: body.content?.trim(),
+  };
+
+  if (!payloadBody.title || !payloadBody.content) {
+    return NextResponse.json(
+      { success: false, error: { message: "Título e conteúdo são obrigatórios." } },
+      { status: 400 }
+    );
+  }
+
+  const { status, payload } = await requestBackend<unknown>("/posts", {
+    method: "POST",
+    token,
+    body: payloadBody,
+  });
+  return NextResponse.json(payload, { status });
 }

@@ -1,74 +1,78 @@
 "use client";
-import { useState, useEffect } from "react";
+
 import { useRouter, useSearchParams } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
-// Tipo base de Post (ajuste de acordo com seu backend se necessário)
-type Post = {
-  _id?: string;
-  title: string;
-  content: string;
-  author: string;
-  createdAt?: string;
-};
-
-type ApiResponse = {
-  success: boolean;
-  message?: string;
-  data?: any;
-  error?: { message: string };
-};
+import { getAuthorId } from "@/lib/posts";
+import { getSessionRequest } from "@/lib/requests/auth";
+import {
+  createPostRequest,
+  getPostByIdRequest,
+  updatePostRequest,
+} from "@/lib/requests/posts";
+import type { SessionUser } from "@/types/auth";
+import type { Post } from "@/types/post";
 
 export default function CreateOrEditPostPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const editingId = searchParams.get("id");
 
-  // Formulário controlado
-  const [form, setForm] = useState<Post>({
+  const [session, setSession] = useState<SessionUser | null>(null);
+  const [post, setPost] = useState<Post | null>(null);
+  const [form, setForm] = useState({
     title: "",
     content: "",
-    author: "",
   });
-
   const [loading, setLoading] = useState(false);
+  const [booting, setBooting] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  // Se estiver editando, buscar os dados do post
   useEffect(() => {
-    const fetchPost = async () => {
-      if (!editingId) return;
-      setLoading(true);
+    const bootstrap = async () => {
+      setBooting(true);
       setError(null);
       try {
-        const res = await fetch(`/api/posts/${editingId}`);
-        if (!res.ok) throw new Error("Não foi possível carregar a postagem.");
-        const apiData: ApiResponse = await res.json();
-        if (!apiData.success || !apiData.data) {
-          throw new Error(apiData.error?.message || "Não foi possível carregar a postagem.");
+        const currentSession = await getSessionRequest();
+        if (currentSession.role !== "professor") {
+          throw new Error("Apenas professores podem criar ou editar postagens.");
         }
+
+        setSession(currentSession);
+        if (!editingId) {
+          return;
+        }
+
+        const currentPost = await getPostByIdRequest(editingId);
+        const authorId = getAuthorId(currentPost.authorId);
+        if (authorId !== currentSession.id) {
+          throw new Error("Você só pode editar postagens criadas por você.");
+        }
+
+        setPost(currentPost);
         setForm({
-          title: apiData.data.title,
-          content: apiData.data.content,
-          author: apiData.data.author,
-          _id: apiData.data._id,
-          createdAt: apiData.data.createdAt,
+          title: currentPost.title,
+          content: currentPost.content,
         });
-      } catch (err: any) {
-        setError(err.message || "Erro ao buscar dados da postagem.");
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Erro ao buscar dados da postagem.";
+        setError(message);
       } finally {
-        setLoading(false);
+        setBooting(false);
       }
     };
-    fetchPost();
+
+    bootstrap();
   }, [editingId]);
 
-  // Função para lidar com mudanças nos campos
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // Submissão do formulário (criar ou editar)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -84,45 +88,48 @@ export default function CreateOrEditPostPage() {
 
     try {
       if (editingId) {
-        // Atualizar postagem existente
-        const res = await fetch(`/api/posts/${editingId}`, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ title: form.title, content: form.content }),
+        await updatePostRequest(editingId, {
+          title: form.title,
+          content: form.content,
         });
-        const data: ApiResponse = await res.json();
-        if (!data.success) throw new Error(data.error?.message || "Falha ao atualizar postagem.");
         setSuccessMsg("Postagem atualizada com sucesso!");
       } else {
-        // Criar nova postagem
-        const res = await fetch("/api/posts", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ title: form.title, content: form.content }),
+        await createPostRequest({
+          title: form.title,
+          content: form.content,
         });
-        const data: ApiResponse = await res.json();
-        if (!data.success) throw new Error(data.error?.message || "Falha ao criar postagem.");
         setSuccessMsg("Postagem criada com sucesso!");
-        // Limpar formulário após criação
-        setForm({ title: "", content: "", author: "" });
+        setForm({ title: "", content: "" });
       }
 
-      // Opcional: Redirecionar para lista de posts após sucesso
       setTimeout(() => {
         router.push("/private/Posts");
       }, 1200);
-
-    } catch (err: any) {
-      setError(err.message || "Erro ao enviar dados.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao enviar dados.";
+      setError(message);
     } finally {
       setLoading(false);
     }
   };
-  console.log("CreateOrEditPostPage", editingId);
+
+  const isOwner = useMemo(() => {
+    if (!session || !post) {
+      return !editingId;
+    }
+    return getAuthorId(post.authorId) === session.id;
+  }, [editingId, post, session]);
+
+  if (booting) {
+    return (
+      <main className="min-h-screen bg-zinc-50 px-6 py-10 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-50">
+        <div className="mx-auto max-w-xl text-center text-zinc-500 dark:text-zinc-400">
+          Carregando formulário...
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
       <div className="w-full max-w-xl bg-white dark:bg-zinc-900 rounded-xl p-8 shadow-lg border border-zinc-200 dark:border-zinc-700">
@@ -140,6 +147,7 @@ export default function CreateOrEditPostPage() {
               className="rounded-md border px-3 py-2 outline-none border-zinc-300 focus:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-50 dark:border-zinc-600"
               placeholder="Digite o título"
               required
+              disabled={Boolean(editingId && !isOwner)}
             />
           </label>
           <label className="flex flex-col gap-1">
@@ -152,11 +160,12 @@ export default function CreateOrEditPostPage() {
               className="rounded-md border px-3 py-2 outline-none border-zinc-300 focus:border-zinc-500 dark:bg-zinc-800 dark:text-zinc-50 dark:border-zinc-600"
               placeholder="Digite o conteúdo da postagem"
               required
+              disabled={Boolean(editingId && !isOwner)}
             />
           </label>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || Boolean(editingId && !isOwner)}
             className="mt-4 rounded-md bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900 font-semibold py-2 transition hover:bg-zinc-700 dark:hover:bg-zinc-300 disabled:opacity-60"
           >
             {loading ? (editingId ? "Salvando..." : "Enviando...") : (editingId ? "Salvar Alterações" : "Criar Postagem")}
@@ -165,6 +174,11 @@ export default function CreateOrEditPostPage() {
         {error && (
           <div className="mt-4 rounded-md bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-200 px-3 py-2 text-sm border border-red-200 dark:border-red-800">
             {error}
+          </div>
+        )}
+        {editingId && !isOwner && (
+          <div className="mt-4 rounded-md bg-yellow-100 text-yellow-800 px-3 py-2 text-sm border border-yellow-200">
+            Apenas o professor autor pode editar esta postagem.
           </div>
         )}
         {successMsg && (

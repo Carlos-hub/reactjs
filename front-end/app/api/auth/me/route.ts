@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
-
-import { getValidSessionHelper } from "../../Helpers/GetValidSessionHelper";
+import { getSessionUserFromCookie } from "@/lib/server/session";
 
 export async function GET() {
-  try {
-    await getValidSessionHelper();
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Unauthorized";
+  const user = await getSessionUserFromCookie();
+  if (!user) {
     return NextResponse.json(
-      { success: false, error: { message } },
+      { success: false, error: { message: "Unauthorized" } },
       { status: 401 }
     );
   }
+
+  return NextResponse.json({ success: true, data: user });
 }
