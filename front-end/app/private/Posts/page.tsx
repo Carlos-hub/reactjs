@@ -6,7 +6,11 @@ import { useEffect, useMemo, useState } from "react";
 
 import { getAuthorId, getAuthorLabel, getPostId, toExcerpt } from "@/lib/posts";
 import { getSessionRequest, logoutRequest } from "@/lib/requests/auth";
-import { listPostsRequest, searchPostsRequest } from "@/lib/requests/posts";
+import {
+  deletePostRequest,
+  listPostsRequest,
+  searchPostsRequest,
+} from "@/lib/requests/posts";
 import type { SessionUser } from "@/types/auth";
 import type { Post } from "@/types/post";
 
@@ -18,6 +22,7 @@ export default function Page() {
   const [search, setSearch] = useState("");
   const [session, setSession] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deletingPostId, setDeletingPostId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -89,6 +94,30 @@ export default function Page() {
   const handleLogout = async () => {
     await logoutRequest();
     router.push("/login");
+  };
+
+  const handleDeletePost = async (postId: string, title: string) => {
+    const confirmed = window.confirm(
+      `Tem certeza que deseja excluir a postagem "${title}"?`
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingPostId(postId);
+    setError(null);
+    try {
+      await deletePostRequest(postId);
+      setPosts((previousPosts) =>
+        previousPosts.filter((post) => getPostId(post) !== postId)
+      );
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Erro ao excluir postagem.";
+      setError(message);
+    } finally {
+      setDeletingPostId(null);
+    }
   };
 
   return (
@@ -175,12 +204,24 @@ export default function Page() {
                   </Link>
                   {isProfessor &&
                     (post.canEdit ? (
-                      <Link
-                        href={`/private/Posts/${post.postId}/edit`}
-                        className="rounded-md border border-zinc-300 px-2.5 py-1 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                      >
-                        Editar
-                      </Link>
+                      <>
+                        <Link
+                          href={`/private/Posts/${post.postId}/edit`}
+                          className="rounded-md border border-zinc-300 px-2.5 py-1 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                        >
+                          Editar
+                        </Link>
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePost(post.postId, post.title)}
+                          disabled={deletingPostId === post.postId}
+                          className="rounded-md border border-red-300 px-2.5 py-1 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/30"
+                        >
+                          {deletingPostId === post.postId
+                            ? "Excluindo..."
+                            : "Excluir"}
+                        </button>
+                      </>
                     ) : (
                       <span className="rounded-md border border-zinc-200 px-2.5 py-1 text-sm text-zinc-400 dark:border-zinc-700 dark:text-zinc-500">
                         Edicao apenas do autor

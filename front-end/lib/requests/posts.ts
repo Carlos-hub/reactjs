@@ -48,3 +48,9 @@ export const updatePostRequest = async (
   }
   return response.data;
 };
+
+export const deletePostRequest = async (id: string): Promise<void> => {
+  await requestAppApi<{ deleted?: boolean }>(`/api/posts/${id}`, {
+    method: "DELETE",
+  });
+};
