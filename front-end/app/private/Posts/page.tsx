@@ -142,12 +142,20 @@ export default function Page() {
             />
             <div className="flex items-center gap-2">
               {isProfessor && (
-                <Link
-                  href="/private/Posts/create"
-                  className="inline-flex items-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-                >
-                  + Nova Postagem
-                </Link>
+                <>
+                  <Link
+                    href="/private/Posts/create"
+                    className="inline-flex items-center rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+                  >
+                    + Nova Postagem
+                  </Link>
+                  <Link
+                    href="/private/Professors/create"
+                    className="inline-flex items-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 transition hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                  >
+                    + Novo Professor
+                  </Link>
+                </>
               )}
               <button
                 onClick={handleLogout}

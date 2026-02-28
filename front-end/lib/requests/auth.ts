@@ -26,3 +26,26 @@ export const logoutRequest = async () => {
     method: "POST",
   });
 };
+
+export const registerStudentRequest = async (payload: {
+  name: string;
+  email: string;
+  password: string;
+}) => {
+  await requestAppApi<undefined>("/api/students", {
+    method: "POST",
+    body: payload,
+  });
+};
+
+export const registerProfessorRequest = async (payload: {
+  name: string;
+  email: string;
+  password: string;
+  discipline: string;
+}) => {
+  await requestAppApi<undefined>("/api/professors", {
+    method: "POST",
+    body: payload,
+  });
+};
