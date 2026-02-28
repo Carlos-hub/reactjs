@@ -21,7 +21,7 @@ services:
     volumes:
       - ./back-end/Blog-FIAP:/usr/src/app
       - ./back-end/Blog-FIAP/node_modules:/usr/src/app/node_modules
-    command: sh -c "npm install && npm run dev"
+    command: sh -c "npm install && npm run seed:professor && npm run dev"
     depends_on:
       - mongo
     networks:
@@ -31,6 +31,10 @@ services:
     restart: unless-stopped
     environment:
       - MONGODB_URI=mongodb://tech-challenge-mongo:27017/tech_challenge
+      - TEST_PROFESSOR_NAME=Professor Teste
+      - TEST_PROFESSOR_EMAIL=professor.teste@fiap.com
+      - TEST_PROFESSOR_PASSWORD=Professor@1234
+      - TEST_PROFESSOR_DISCIPLINE=Arquitetura de Software
 
   mongo:
     image: mongo:7

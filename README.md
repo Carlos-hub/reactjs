@@ -19,6 +19,11 @@ Servicos e portas:
 - MongoDB: `localhost:27017`
 
 > O `docker-compose` ja instala dependencias e sobe tudo em modo desenvolvimento.
+> Ao subir o container da API, um professor de teste e criado automaticamente (caso nao exista).
+
+Credencial inicial de professor (seed):
+- E-mail: `professor.teste@fiap.com`
+- Senha: `Professor@1234`
 
 ### Como o sistema funciona
 
@@ -72,7 +77,9 @@ Estrutura principal:
    - Use o campo de busca para filtrar por titulo/conteudo.
    - Clique em **Ler post** para abrir detalhes.
 4. Se for professor:
+
    - Clique em **+ Nova Postagem** para criar.
    - Clique em **Editar** para alterar seu post.
    - Clique em **Excluir** para remover seu post.
+   - Pode criar outro professor
 5. Se tentar editar/excluir post de outro professor, a API retorna `403 Forbidden`.
